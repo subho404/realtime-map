@@ -23,3 +23,34 @@ if(navigator.geolocation){
 
 );
 }
+
+const map = L.map('map').setView([23.20,20.2], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; SubhamBiswas'
+}).addTo(map);
+
+const markers={};
+socket.on('all-locations', (locations) => {
+    Object.values(locations).forEach(({ id, latitude, longitude }) => {
+        if (!markers[id]) {
+            markers[id] = L.marker([latitude, longitude]).addTo(map);
+        }
+    });
+});
+socket.on('receive-location',(data)=>{
+    const {id, latitude, longitude} = data;
+
+    map.setView([latitude, longitude]);
+    if(markers[id]){
+        markers[id].setLatLng([latitude, longitude]);
+    }else{
+        markers[id]=L.marker([latitude, longitude]).addTo(map)
+    }
+})
+socket.on("user-disconnected", (id) => {
+    if (markers[id]) {
+        map.removeLayer(markers[id]);
+        delete markers[id];
+    }
+})
